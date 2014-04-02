@@ -1,0 +1,41 @@
+body {
+    margin: 30px;
+}
+
+#leftJson {
+    float: left;
+}
+
+#rightJson {
+    clear: both;
+}
+
+.jsonInput {
+    width: 400px;
+    height:300px;
+    margin-right: 30px;
+}
+
+#showDiff {
+    clear: both;
+    width: 200px;
+    margin: 30px 0;
+}
+
+#diffBody {
+    cursor: default;
+}
+.nodeBody {
+    margin-left: 30px;
+}
+.arrow {
+    margin-right: 10px;
+    font-size: larger;
+}
+
+.added {
+    color: green;
+}
+.deleted {
+    color: red;
+}

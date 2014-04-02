@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link type="text/css" href="style.css" rel="stylesheet"/>
+    <script type="application/javascript" src="lib/jquery.js"></script>
+    <script type="application/javascript" src="script.js"></script>
+    <title>JsonDiff</title>
+</head>
+<body>
+<div>
+<textarea id="leftJson" class="jsonInput"></textarea>
+<textarea id="rightJson" class="jsonInput"></textarea>
+</div>
+<div>
+<input type="button" id="showDiff" value="Show diff"/>
+</div>
+<div id="diffBody">
+    <div class="diffNode">
+        <div class="nodeLabel"><span class="arrow">&#9656;</span>1111</div>
+        <div class="nodeBody">
+            <div class="diffLeaf">1111.1111</div>
+            <div class="diffNode">
+                <div class="nodeLabel"><span class="arrow">&#9662;</span>1111.2222</div>
+                <div class="nodeBody">
+                    <div class="diffLeaf">1111.2222.aaa</div>
+                </div>
+            </div>
+            <div class="diffLeaf">1111.3333</div>
+            <div class="diffNode">
+                <div class="nodeLabel"><span class="arrow">&#9662;</span>1111.4444</div>
+                <div class="nodeBody">
+                    <div class="diffLeaf">1111.4444.aaa</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
