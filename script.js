@@ -46,6 +46,17 @@ function buildFromValue(label, value, state) {
     }
 }
 
+function buildFromSameNamedProperties(key, fromValue, toValue) {
+    var children = compareValues(fromValue, toValue);
+    if (children.length == 1) {
+        var child = children[0];
+        if (child.label)
+            key = key + ": " + child.label;
+        return new DiffNode(key, 2 /* BOTH */, child.children);
+    }
+    return new DiffNode(key, 2 /* BOTH */, compareValues(fromValue, toValue));
+}
+
 function compareArrayElements(fromElements, toElements) {
     var usedToIndices = [];
     var result = [];
@@ -147,7 +158,7 @@ function compareValues(fromJSON, toJSON) {
                     var key = fromKeys[iFrom];
                     var fromValue = fromJSON[key];
                     var toValue = toJSON[key];
-                    node = new DiffNode(key, 2 /* BOTH */, compareValues(fromValue, toValue));
+                    node = buildFromSameNamedProperties(key, fromValue, toValue);
                     iFrom++;
                     iTo++;
                 }

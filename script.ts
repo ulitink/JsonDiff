@@ -48,6 +48,16 @@ function buildFromValue(label: string, value: any, state: DiffState): DiffNode {
     }
 }
 
+function buildFromSameNamedProperties(key:string, fromValue:any, toValue:any): DiffNode {
+    var children = compareValues(fromValue, toValue);
+    if (children.length == 1) {
+        var child:DiffNode = children[0];
+        if (child.label) key = key + ": " + child.label;
+        return new DiffNode(key, DiffState.BOTH, child.children);
+    }
+    return new DiffNode(key, DiffState.BOTH, compareValues(fromValue, toValue));
+}
+
 function compareArrayElements(fromElements: Array<any>, toElements:Array<any>): Array<DiffNode> {
     var usedToIndices:Array<boolean> = [];
     var result:Array<DiffNode> = [];
@@ -149,7 +159,7 @@ function compareValues(fromJSON: any, toJSON: any): Array<DiffNode> {
                     var key = fromKeys[iFrom];
                     var fromValue = fromJSON[key];
                     var toValue = toJSON[key];
-                    node = new DiffNode(key, DiffState.BOTH, compareValues(fromValue, toValue));
+                    node = buildFromSameNamedProperties(key, fromValue, toValue);
                     iFrom++;
                     iTo++;
                 }
