@@ -145,24 +145,25 @@ function compareValues(fromJSON: any, toJSON: any): Array<DiffNode> {
         var iFrom = 0, iTo = 0;
         var result:Array<DiffNode> = [];
         while (iFrom < fromLength || iTo < toLength) {
-            if (iFrom < fromLength && iTo < toLength) {
-                var node:DiffNode;
-                if (fromKeys[iFrom] < toKeys[iTo]) {
-                    node = buildFromValue(fromKeys[iFrom], fromJSON[fromKeys[iFrom]], DiffState.DELETED);
-                    iFrom++;
-                }
-                else if (fromKeys[iFrom] > toKeys[iTo]) {
-                    node = buildFromValue(toKeys[iTo], toJSON[toKeys[iTo]], DiffState.ADDED);
-                    iTo++;
-                }
-                else if (fromKeys[iFrom] === toKeys[iTo]) {
-                    var key = fromKeys[iFrom];
-                    var fromValue = fromJSON[key];
-                    var toValue = toJSON[key];
-                    node = buildFromSameNamedProperties(key, fromValue, toValue);
-                    iFrom++;
-                    iTo++;
-                }
+            var node:DiffNode;
+            if (iTo >= toLength || iFrom < fromLength && fromKeys[iFrom] < toKeys[iTo]) {
+                node = buildFromValue(fromKeys[iFrom], fromJSON[fromKeys[iFrom]], DiffState.DELETED);
+                iFrom++;
+            }
+            else if (iFrom >= fromLength || iTo < toLength && fromKeys[iFrom] > toKeys[iTo]) {
+                node = buildFromValue(toKeys[iTo], toJSON[toKeys[iTo]], DiffState.ADDED);
+                iTo++;
+            }
+            else if (iFrom < fromLength && iTo < toLength && fromKeys[iFrom] === toKeys[iTo]) {
+                var key = fromKeys[iFrom];
+                var fromValue = fromJSON[key];
+                var toValue = toJSON[key];
+                node = buildFromSameNamedProperties(key, fromValue, toValue);
+                iFrom++;
+                iTo++;
+            }
+            else {
+                throw new Error("unexpected error on comparing objects");
             }
             result.push(node);
         }
