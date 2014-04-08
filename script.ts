@@ -52,8 +52,10 @@ function buildFromSameNamedProperties(key:string, fromValue:any, toValue:any): D
     var children = compareValues(fromValue, toValue);
     if (children.length == 1) {
         var child:DiffNode = children[0];
-        if (child.label) key = key + ": " + child.label;
-        return new DiffNode(key, DiffState.BOTH, child.children);
+        if (child.children.length == 0) {
+            if (child.label !== undefined) key = key + ": " + child.label;
+            return new DiffNode(key, DiffState.BOTH, child.children);
+        }
     }
     return new DiffNode(key, DiffState.BOTH, compareValues(fromValue, toValue));
 }
@@ -173,7 +175,7 @@ function compareValues(fromJSON: any, toJSON: any): Array<DiffNode> {
         return [buildFromValue("", fromJSON, DiffState.BOTH)];
     }
     else {
-        return [buildFromValue("", fromJSON, DiffState.DELETED), buildFromValue("", fromJSON, DiffState.ADDED)];
+        return [buildFromValue("", fromJSON, DiffState.DELETED), buildFromValue("", toJSON, DiffState.ADDED)];
     }
 
 }

@@ -50,9 +50,11 @@ function buildFromSameNamedProperties(key, fromValue, toValue) {
     var children = compareValues(fromValue, toValue);
     if (children.length == 1) {
         var child = children[0];
-        if (child.label)
-            key = key + ": " + child.label;
-        return new DiffNode(key, 2 /* BOTH */, child.children);
+        if (child.children.length == 0) {
+            if (child.label !== undefined)
+                key = key + ": " + child.label;
+            return new DiffNode(key, 2 /* BOTH */, child.children);
+        }
     }
     return new DiffNode(key, 2 /* BOTH */, compareValues(fromValue, toValue));
 }
@@ -169,7 +171,7 @@ function compareValues(fromJSON, toJSON) {
     } else if (!fromIsArray && !toIsArray && !fromIsObject && !toIsObject && fromJSON === toJSON) {
         return [buildFromValue("", fromJSON, 2 /* BOTH */)];
     } else {
-        return [buildFromValue("", fromJSON, 1 /* DELETED */), buildFromValue("", fromJSON, 0 /* ADDED */)];
+        return [buildFromValue("", fromJSON, 1 /* DELETED */), buildFromValue("", toJSON, 0 /* ADDED */)];
     }
 }
 
