@@ -104,7 +104,7 @@ function similarity(from:any, to:any): number {
         var commonKeys: number = 0;
         for (var fromKey in from) {
             keysNumber++;
-            if (to[fromKey] != undefined) commonKeys++;
+            if (to.hasOwnProperty(fromKey)) commonKeys++;
         }
         return keysNumber > 0 ? commonKeys/keysNumber : 0;
     }
