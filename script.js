@@ -1,7 +1,14 @@
 ///<reference path="./definitions/jquery.d.ts"/>
 $(document).ready(function () {
-    $("#leftJson").val('{ "a": { "b": 1 }, "c": 2, "d": [1,2] }');
-    $("#rightJson").val('{ "a": { "b": 3 }, "c": 2, "d": [1,3] }');
+    $.get("tests/Big_from.json", undefined, function (data) {
+        $("#leftJson").val(data);
+    }, "text");
+    $.get("tests/Big_to.json", undefined, function (data) {
+        $("#rightJson").val(data);
+    }, "text");
+
+    //    $("#leftJson").val('{"AbstractView":{}, "AbstractWorker":{"onerror":{"type":"Function","kind":"property"}}}');
+    //    $("#rightJson").val('{"AbstractView":{"document":{"readonly":true,"type":"DocumentView","kind":"property"}} ,"AbstractWorker":{"onerror":{"readonly":false,"type":"EventHandler","kind":"property"}}}');
     $("#showDiff").click(function (obj) {
         var fromString = $("#leftJson").val();
         var toString = $("#rightJson").val();
@@ -10,6 +17,7 @@ $(document).ready(function () {
         attachToggleEvents();
     });
     attachToggleEvents();
+    $("#hideIdentical").change(onHideIdenticalChange);
 });
 
 var DiffState;
@@ -212,5 +220,32 @@ function attachToggleEvents() {
         arrow.html(arrow.html() == '&#9662;' ? '&#9656;' : '&#9662;');
         $(this).parent().find(".nodeBody").slideToggle(100);
     });
+}
+
+function onHideIdenticalChange() {
+    if (this.checked) {
+        $("#diffBody").children().each(hideIdentical);
+    } else {
+        var descendants = $("#diffBody").find("*");
+        descendants.each(function () {
+            $(this).show();
+        });
+    }
+
+    function hideIdentical(i, element) {
+        var elementJQuery = $(element);
+
+        var allIdentical = !elementJQuery.hasClass("added") && !elementJQuery.hasClass("deleted");
+        if (elementJQuery.hasClass("diffLeaf") && allIdentical) {
+            elementJQuery.hide();
+        }
+        elementJQuery.find(".nodeBody").children().each(function (i, element) {
+            var identical = hideIdentical(i, element).allIdentical;
+            allIdentical = allIdentical && identical;
+        });
+        if (allIdentical)
+            elementJQuery.hide();
+        return { allIdentical: allIdentical };
+    }
 }
 //# sourceMappingURL=script.js.map

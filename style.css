@@ -19,7 +19,6 @@ body {
 #showDiff {
     clear: both;
     width: 200px;
-    margin: 30px 0;
 }
 
 #diffBody {
@@ -38,4 +37,13 @@ body {
 }
 .deleted {
     color: red;
+}
+#controls {
+    margin: 30px 0;
+}
+.control {
+    margin: 10px;
+}
+label {
+    margin: 5px;
 }

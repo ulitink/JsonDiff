@@ -11,8 +11,13 @@
 <textarea id="leftJson" class="jsonInput"></textarea>
 <textarea id="rightJson" class="jsonInput"></textarea>
 </div>
-<div>
-<input type="button" id="showDiff" value="Show diff"/>
+<div id="controls">
+    <div class="control">
+        <input type="button" id="showDiff" value="Show diff"/>
+    </div>
+    <div class="control">
+        <input type="checkbox" id="hideIdentical" value="Hide identical"><label for="hideIdentical">Hide identical</label>
+    </div>
 </div>
 <div id="diffBody">
     <div class="diffNode">
