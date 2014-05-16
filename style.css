@@ -47,3 +47,6 @@ body {
 label {
     margin: 5px;
 }
+.identicalHidden {
+    display: none;
+}

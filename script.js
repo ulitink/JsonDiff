@@ -18,6 +18,7 @@ $(document).ready(function () {
     });
     attachToggleEvents();
     $("#hideIdentical").change(onHideIdenticalChange);
+    $("#collapseAddedAndDeletedElementsChildren").change(onCollapseAddedAndDeletedElementsChildrenChange);
 });
 
 var DiffState;
@@ -215,11 +216,29 @@ function buildHtml(diff) {
 }
 
 function attachToggleEvents() {
-    $(".nodeLabel").click(function (obj) {
+    $(".nodeLabel").click(toggleEventFactory(true, 0 /* TOGGLED */));
+}
+var ToggleEventNewValue;
+(function (ToggleEventNewValue) {
+    ToggleEventNewValue[ToggleEventNewValue["TOGGLED"] = 0] = "TOGGLED";
+    ToggleEventNewValue[ToggleEventNewValue["SHOWN"] = 1] = "SHOWN";
+    ToggleEventNewValue[ToggleEventNewValue["HIDDEN"] = 2] = "HIDDEN";
+})(ToggleEventNewValue || (ToggleEventNewValue = {}));
+
+/** this = nodeLabel */
+function toggleEventFactory(animation, newValue) {
+    return function () {
         var arrow = $(this).find(".arrow");
         arrow.html(arrow.html() == '&#9662;' ? '&#9656;' : '&#9662;');
-        $(this).parent().find(".nodeBody").slideToggle(100);
-    });
+        var body = $(this).parent().find(".nodeBody");
+        if (animation) {
+            body.slideToggle(100);
+        } else if (newValue == 1 /* SHOWN */ || body.is(":hidden")) {
+            body.show();
+        } else if (newValue != 1 /* SHOWN */) {
+            body.hide();
+        }
+    };
 }
 
 function onHideIdenticalChange() {
@@ -228,7 +247,7 @@ function onHideIdenticalChange() {
     } else {
         var descendants = $("#diffBody").find("*");
         descendants.each(function () {
-            $(this).show();
+            $(this).removeClass("identicalHidden");
         });
     }
 
@@ -237,15 +256,34 @@ function onHideIdenticalChange() {
 
         var allIdentical = !elementJQuery.hasClass("added") && !elementJQuery.hasClass("deleted");
         if (elementJQuery.hasClass("diffLeaf") && allIdentical) {
-            elementJQuery.hide();
+            elementJQuery.addClass("identicalHidden");
         }
         elementJQuery.find(".nodeBody").children().each(function (i, element) {
             var identical = hideIdentical(i, element).allIdentical;
             allIdentical = allIdentical && identical;
         });
         if (allIdentical)
-            elementJQuery.hide();
+            elementJQuery.addClass("identicalHidden");
         return { allIdentical: allIdentical };
+    }
+}
+
+function onCollapseAddedAndDeletedElementsChildrenChange() {
+    var newValue = this.checked ? 2 /* HIDDEN */ : 1 /* SHOWN */;
+    $("#diffBody").children().each(collapseAddedAndDeletedElementsChildren);
+
+    function collapseAddedAndDeletedElementsChildren(i, element) {
+        var elementJQuery = $(element);
+        if (elementJQuery.hasClass("added") || elementJQuery.hasClass("deleted")) {
+            var label = elementJQuery.children(".nodeLabel");
+            if (label.length == 1) {
+                toggleEventFactory(false, newValue).call(label);
+            }
+        } else {
+            elementJQuery.find(".nodeBody").children().each(function (i, element) {
+                collapseAddedAndDeletedElementsChildren(i, element);
+            });
+        }
     }
 }
 //# sourceMappingURL=script.js.map
