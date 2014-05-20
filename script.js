@@ -1,9 +1,9 @@
 ///<reference path="./definitions/jquery.d.ts"/>
 $(document).ready(function () {
-    $.get("tests/Big_from.json", undefined, function (data) {
+    $.get("tests/Simple2_from.json", undefined, function (data) {
         $("#leftJson").val(data);
     }, "text");
-    $.get("tests/Big_to.json", undefined, function (data) {
+    $.get("tests/Simple2_to.json", undefined, function (data) {
         $("#rightJson").val(data);
     }, "text");
 
