@@ -1,8 +1,15 @@
 ///<reference path="./definitions/jquery.d.ts"/>
 
 $(document).ready(function () {
-    $("#leftJson").val('{ "a": { "b": 1 }, "c": 2, "d": [1,2] }');
-    $("#rightJson").val('{ "a": { "b": 3 }, "c": 2, "d": [1,3] }');
+    $.get("tests/Simple2_from.json", undefined, function(data) {
+        $("#leftJson").val(data);
+    }, "text");
+    $.get("tests/Simple2_to.json", undefined, function(data) {
+        $("#rightJson").val(data);
+    }, "text");
+//    $("#leftJson").val('{"AbstractView":{}, "AbstractWorker":{"onerror":{"type":"Function","kind":"property"}}}');
+//    $("#rightJson").val('{"AbstractView":{"document":{"readonly":true,"type":"DocumentView","kind":"property"}} ,"AbstractWorker":{"onerror":{"readonly":false,"type":"EventHandler","kind":"property"}}}');
+
     $("#showDiff").click((obj) => {
         var fromString = $("#leftJson").val();
         var toString = $("#rightJson").val();
@@ -11,6 +18,8 @@ $(document).ready(function () {
         attachToggleEvents();
     });
     attachToggleEvents();
+    $("#hideIdentical").change(onHideIdenticalChange);
+    $("#collapseAddedAndDeletedElementsChildren").change(onCollapseAddedAndDeletedElementsChildrenChange);
 });
 
 enum DiffState {
@@ -46,6 +55,18 @@ function buildFromValue(label: string, value: any, state: DiffState): DiffNode {
         if (label) value = label + ": " + value;
         return new DiffNode(value, state, []);
     }
+}
+
+function buildFromSameNamedProperties(key:string, fromValue:any, toValue:any): DiffNode {
+    var children = compareValues(fromValue, toValue);
+    if (children.length == 1) {
+        var child:DiffNode = children[0];
+        if (child.children.length == 0) {
+            if (child.label !== undefined) key = key + ": " + child.label;
+            return new DiffNode(key, DiffState.BOTH, child.children);
+        }
+    }
+    return new DiffNode(key, DiffState.BOTH, compareValues(fromValue, toValue));
 }
 
 function compareArrayElements(fromElements: Array<any>, toElements:Array<any>): Array<DiffNode> {
@@ -94,7 +115,7 @@ function similarity(from:any, to:any): number {
         var commonKeys: number = 0;
         for (var fromKey in from) {
             keysNumber++;
-            if (to[fromKey] != undefined) commonKeys++;
+            if (to.hasOwnProperty(fromKey)) commonKeys++;
         }
         return keysNumber > 0 ? commonKeys/keysNumber : 0;
     }
@@ -135,24 +156,25 @@ function compareValues(fromJSON: any, toJSON: any): Array<DiffNode> {
         var iFrom = 0, iTo = 0;
         var result:Array<DiffNode> = [];
         while (iFrom < fromLength || iTo < toLength) {
-            if (iFrom < fromLength && iTo < toLength) {
-                var node:DiffNode;
-                if (fromKeys[iFrom] < toKeys[iTo]) {
-                    node = buildFromValue(fromKeys[iFrom], fromJSON[fromKeys[iFrom]], DiffState.DELETED);
-                    iFrom++;
-                }
-                else if (fromKeys[iFrom] > toKeys[iTo]) {
-                    node = buildFromValue(toKeys[iTo], toJSON[toKeys[iTo]], DiffState.ADDED);
-                    iTo++;
-                }
-                else if (fromKeys[iFrom] === toKeys[iTo]) {
-                    var key = fromKeys[iFrom];
-                    var fromValue = fromJSON[key];
-                    var toValue = toJSON[key];
-                    node = new DiffNode(key, DiffState.BOTH, compareValues(fromValue, toValue));
-                    iFrom++;
-                    iTo++;
-                }
+            var node:DiffNode;
+            if (iTo >= toLength || iFrom < fromLength && fromKeys[iFrom] < toKeys[iTo]) {
+                node = buildFromValue(fromKeys[iFrom], fromJSON[fromKeys[iFrom]], DiffState.DELETED);
+                iFrom++;
+            }
+            else if (iFrom >= fromLength || iTo < toLength && fromKeys[iFrom] > toKeys[iTo]) {
+                node = buildFromValue(toKeys[iTo], toJSON[toKeys[iTo]], DiffState.ADDED);
+                iTo++;
+            }
+            else if (iFrom < fromLength && iTo < toLength && fromKeys[iFrom] === toKeys[iTo]) {
+                var key = fromKeys[iFrom];
+                var fromValue = fromJSON[key];
+                var toValue = toJSON[key];
+                node = buildFromSameNamedProperties(key, fromValue, toValue);
+                iFrom++;
+                iTo++;
+            }
+            else {
+                throw new Error("unexpected error on comparing objects");
             }
             result.push(node);
         }
@@ -162,7 +184,7 @@ function compareValues(fromJSON: any, toJSON: any): Array<DiffNode> {
         return [buildFromValue("", fromJSON, DiffState.BOTH)];
     }
     else {
-        return [buildFromValue("", fromJSON, DiffState.DELETED), buildFromValue("", fromJSON, DiffState.ADDED)];
+        return [buildFromValue("", fromJSON, DiffState.DELETED), buildFromValue("", toJSON, DiffState.ADDED)];
     }
 
 }
@@ -203,9 +225,72 @@ function buildHtml(diff:Array<DiffNode>): string {
 }
 
 function attachToggleEvents() {
-    $(".nodeLabel").click(function (obj) {
+    $(".nodeLabel").click(toggleEventFactory(true, ToggleEventNewValue.TOGGLED));
+}
+enum ToggleEventNewValue {
+    TOGGLED, SHOWN, HIDDEN
+}
+/** this = nodeLabel */
+function toggleEventFactory(animation:boolean, newValue:ToggleEventNewValue) {
+    return function() {
         var arrow = $(this).find(".arrow");
         arrow.html(arrow.html() == '&#9662;' ? '&#9656;' : '&#9662;');
-        $(this).parent().find(".nodeBody").slideToggle(100);
-    });
+        var body = $(this).parent().find(".nodeBody");
+        if (animation) {
+            body.slideToggle(100);
+        }
+        else if (newValue == ToggleEventNewValue.SHOWN || body.is(":hidden")){
+            body.show();
+        }
+        else if (newValue != ToggleEventNewValue.SHOWN) {
+            body.hide();
+        }
+    }
+}
+
+function onHideIdenticalChange() {
+    if (this.checked) {
+        $("#diffBody").children().each(hideIdentical);
+    }
+    else {
+        var descendants:any = $("#diffBody").find("*");
+        descendants.each(function() {
+            $(this).removeClass("identicalHidden");
+        });
+    }
+
+    function hideIdentical(i:number, element:Element): {allIdentical:boolean} {
+        var elementJQuery = $(element);
+
+        var allIdentical = !elementJQuery.hasClass("added") && !elementJQuery.hasClass("deleted");
+        if (elementJQuery.hasClass("diffLeaf") && allIdentical) {
+            elementJQuery.addClass("identicalHidden");
+        }
+        elementJQuery.find(".nodeBody").children().each((i, element) => {
+            var identical = hideIdentical(i, element).allIdentical;
+            allIdentical = allIdentical && identical;
+        });
+        if (allIdentical) elementJQuery.addClass("identicalHidden");
+        return {allIdentical:allIdentical};
+    }
+}
+
+function onCollapseAddedAndDeletedElementsChildrenChange() {
+    var newValue:ToggleEventNewValue = this.checked ? ToggleEventNewValue.HIDDEN : ToggleEventNewValue.SHOWN;
+    $("#diffBody").children().each(collapseAddedAndDeletedElementsChildren);
+
+    function collapseAddedAndDeletedElementsChildren(i:number, element:Element) {
+        var elementJQuery = $(element);
+        if (elementJQuery.hasClass("added") || elementJQuery.hasClass("deleted")) {
+            var label = elementJQuery.children(".nodeLabel");
+            if (label.length == 1) {
+                toggleEventFactory(false, newValue).call(label);
+            }
+        }
+        else {
+            elementJQuery.find(".nodeBody").children().each((i, element) => {
+                collapseAddedAndDeletedElementsChildren(i, element);
+            });
+        }
+    }
 }
